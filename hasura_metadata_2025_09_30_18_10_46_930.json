@@ -1,0 +1,290 @@
+{
+  "resource_version": 55,
+  "metadata": {
+    "version": 3,
+    "sources": [
+      {
+        "name": "default",
+        "kind": "postgres",
+        "tables": [
+          {
+            "table": {
+              "name": "conversations",
+              "schema": "public"
+            },
+            "array_relationships": [
+              {
+                "name": "documents",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "conversation_id",
+                    "table": {
+                      "name": "documents_conversations",
+                      "schema": "public"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "messages",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "conversation_id",
+                    "table": {
+                      "name": "messages",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "documents",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "user",
+                "using": {
+                  "foreign_key_constraint_on": "user_id"
+                }
+              }
+            ],
+            "array_relationships": [
+              {
+                "name": "conversations",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "document_id",
+                    "table": {
+                      "name": "documents_conversations",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "documents_conversations",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "conversation",
+                "using": {
+                  "foreign_key_constraint_on": "conversation_id"
+                }
+              },
+              {
+                "name": "document",
+                "using": {
+                  "foreign_key_constraint_on": "document_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "messages",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "conversation",
+                "using": {
+                  "foreign_key_constraint_on": "conversation_id"
+                }
+              },
+              {
+                "name": "user",
+                "using": {
+                  "foreign_key_constraint_on": "user_id"
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "registries",
+              "schema": "public"
+            },
+            "array_relationships": [
+              {
+                "name": "users",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "registry_id",
+                    "table": {
+                      "name": "users",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "table": {
+              "name": "roles",
+              "schema": "public"
+            },
+            "is_enum": true
+          },
+          {
+            "table": {
+              "name": "states",
+              "schema": "public"
+            },
+            "is_enum": true
+          },
+          {
+            "table": {
+              "name": "users",
+              "schema": "public"
+            },
+            "object_relationships": [
+              {
+                "name": "registry",
+                "using": {
+                  "foreign_key_constraint_on": "registry_id"
+                }
+              }
+            ],
+            "array_relationships": [
+              {
+                "name": "documents",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "user_id",
+                    "table": {
+                      "name": "documents",
+                      "schema": "public"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "messages",
+                "using": {
+                  "foreign_key_constraint_on": {
+                    "column": "user_id",
+                    "table": {
+                      "name": "messages",
+                      "schema": "public"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "configuration": {
+          "connection_info": {
+            "database_url": {
+              "from_env": "HASURA_GRAPHQL_DATABASE_URL"
+            },
+            "isolation_level": "read-committed",
+            "pool_settings": {
+              "connection_lifetime": 600,
+              "idle_timeout": 180,
+              "max_connections": 50,
+              "retries": 1
+            },
+            "use_prepared_statements": true
+          }
+        }
+      }
+    ],
+    "actions": [
+      {
+        "name": "login",
+        "definition": {
+          "handler": "{{HASURA_ACTION_BASE_URL}}/api/login",
+          "output_type": "LoginResponse",
+          "headers": [
+            {
+              "name": "x-auth-secret",
+              "value_from_env": "HEADER_SECRET"
+            }
+          ],
+          "arguments": [
+            {
+              "name": "email",
+              "type": "String!"
+            },
+            {
+              "name": "password",
+              "type": "String!"
+            }
+          ],
+          "type": "mutation",
+          "kind": "synchronous"
+        }
+      },
+      {
+        "name": "rag_service",
+        "definition": {
+          "handler": "{{HASURA_ACTION_BASE_URL}}/api/generate-answer",
+          "output_type": "ragResponse",
+          "headers": [
+            {
+              "name": "x-auth-secret",
+              "value_from_env": "HEADER_SECRET"
+            }
+          ],
+          "arguments": [
+            {
+              "name": "question",
+              "type": "String"
+            },
+            {
+              "name": "conversation_id",
+              "type": "String"
+            },
+            {
+              "name": "file_url",
+              "type": "String"
+            }
+          ],
+          "type": "mutation",
+          "kind": "synchronous"
+        },
+        "permissions": [
+          {
+            "role": "guest"
+          }
+        ]
+      }
+    ],
+    "custom_types": {
+      "objects": [
+        {
+          "name": "LoginResponse",
+          "fields": [
+            {
+              "name": "token",
+              "type": "String!"
+            }
+          ]
+        },
+        {
+          "name": "ragResponse",
+          "fields": [
+            {
+              "name": "answer",
+              "type": "String!"
+            },
+            {
+              "name": "conversation_id",
+              "type": "String!"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
